@@ -35,54 +35,50 @@ SCREEN_BACK_CHAR        = $2000
 ;address of the screen backbuffer
 SCREEN_BACK_COLOR       = $C800
 
-;values for base and backup screen
-BASE_SCREEN             = $00
-BACKUP_SCREEN           = $FF
-
 ;this creates a basic start
 *=$0801
 
 		;SYS 2064
 		!byte $0C,$08,$0A,$00,$9E,$20,$32,$30,$36,$34,$00,$00,$00,$00,$00
 
-          ;block interrupts 
-          ;since we turn ROMs off this would result in crashes if we didn't
-          sei
+		;block interrupts 
+		;since we turn ROMs off this would result in crashes if we didn't
+		sei
           
-          ;save old configuration
-          lda $01
-          sta PARAM1
+		;save old configuration
+		lda $01
+		sta PARAM1
           
-          ;to copy under the IO rom and expose character generator rom
-          ;lda #%00110000
+		;to copy under the IO rom and expose character generator rom
+		;lda #%00110000
 		lda #%00110011
-          sta $01
+		sta $01
           
-          ;take source address from CHARSET
-          LDA #$00
-          STA ZEROPAGE_POINTER_1
-          LDA #$D0
-          STA ZEROPAGE_POINTER_1 + 1
+		;take source address from CHARSET
+		lda #$00
+		sta ZEROPAGE_POINTER_1
+		lda #$D0
+		sta ZEROPAGE_POINTER_1 + 1
           
-          ;now copy
-          jsr CopyCharSet
+		;now copy
+		jsr CopyCharSet
 
-          ;restore ROMs
-          lda PARAM1
-          sta $01
+		;restore ROMs
+		lda PARAM1
+		sta $01
           
-          cli
+		cli
 		
- 		;set charset to 12K from start of VIC (12*1024=$3000)
+		;set charset to 12K from start of VIC (12*1024=$3000)
 		;and screen memory to %0011*1024=3*1024=$CC00
-          lda #$3c
-          sta VIC_MEMORY_CONTROL
+		lda #$3c
+		sta VIC_MEMORY_CONTROL
 
-          ;VIC bank set to bank 3 meaning $C000 to $FFFF
-          ;character set to be found at $C000+$3000=$F000
+		;VIC bank set to bank 3 meaning $C000 to $FFFF
+		;character set to be found at $C000+$3000=$F000
 		lda CIA_PRA
-          and #$fc
-          sta CIA_PRA
+		and #$fc
+		sta CIA_PRA
 		
 		; set scroll delay to 0
 		ldx  #$00
@@ -99,10 +95,9 @@ spaceloop
 		bne	spaceloop
 		
 		;write message to the screen
-		ldy	#$00
-		lda	#<MESSAGE
+		lda	#<TICKER
 		sta	ZEROPAGE_POINTER_1
-		lda	#>MESSAGE
+		lda	#>TICKER
 		sta	ZEROPAGE_POINTER_1 + 1
 		
 		lda #$01
@@ -111,6 +106,33 @@ spaceloop
 		jsr DisplayText
 
 		; empty the character shapes 64-75
+
+		
+		ldx #$1f
+		ldy #$03
+		lda TICKER,x
+multiply	asl
+		sta PARAM1
+		sta ZEROPAGE_POINTER_1
+		
+		lda ZEROPAGE_POINTER_1+1
+		adc #$00
+		sta ZEROPAGE_POINTER_1+1
+		lda PARAM1
+		dey
+		bne multiply
+stoploop	jmp stoploop
+
+		ldy #$0
+copyloop	lda #128
+		sta (ZEROPAGE_POINTER_1),y
+		iny
+		cpy #$08
+		bne copyloop
+
+hold		nop
+		jmp hold
+				
 		
 		; loop through the message
 		; copy the shape of the character at the cursor to the input buffer character
@@ -285,9 +307,9 @@ DisplayText
 ; the delay counter for scrolling
 SCROLL_DELAY	!byte	0
 		 
-;MESSAGE	!text "HELLO THIS IS MY MESSAGE*", $00
-MESSAGE	!byte 64,65,66,67,68,69,70,71,72,73,74,75,$2A
-;MESSAGE !byte 0,1,2,3,4,5,6,7,8,9,10,11,12,$2a
+MESSAGE	!text "HELLO THIS IS MY MESSAGE*", $00
+;TICKER	!byte 64,65,66,67,68,69,70,71,72,73,74,$2A
+TICKER !byte 0,1,2,3,4,5,6,7,8,9,10,11,$2a
 
 ; tables of address of first character on each line of base and backup screens (low and high parts)
 SCREEN_LINE_OFFSET_TABLE_LO
