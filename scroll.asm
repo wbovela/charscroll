@@ -105,44 +105,32 @@ spaceloop
 		sta PARAM2
 		jsr DisplayText
 
-		; empty the character shapes 64-75
-
+		; empty the character shapes in the ticker
+		ldy #$00
+nextchar	lda #<TICKER
+		sta ZEROPAGE_POINTER_2
+		lda #>TICKER
+		sta ZEROPAGE_POINTER_2+1
+		jsr CalculateCharPos
+		sty PARAM1
 		
-		ldx #$1f
-		ldy #$03
-		lda TICKER,x
-multiply	asl
-		sta PARAM1
-		sta ZEROPAGE_POINTER_1
-		
-		lda ZEROPAGE_POINTER_1+1
-		adc #$00
-		sta ZEROPAGE_POINTER_1+1
-		lda PARAM1
-		dey
-		bne multiply
-stoploop	jmp stoploop
-
-		ldy #$0
-copyloop	lda #128
-		sta (ZEROPAGE_POINTER_1),y
+		ldy #$00
+		lda #0
+wipeloop	sta (ZEROPAGE_POINTER_1),y
 		iny
 		cpy #$08
-		bne copyloop
-
+		bne wipeloop
+		
+		ldy PARAM1
+		iny
+		cpy #$0b
+		bne nextchar
+		
 hold		nop
 		jmp hold
 				
 		
-		; loop through the message
-		; copy the shape of the character at the cursor to the input buffer character
-		;  for 8 lines do
-		;   rol line one pixel
-		;  8 pixels scrolled?
-		;  no: keep scrolling
-		;  yes: advance the message pointer
-		;  message pointer at end? yes: set to 0
-		; 
+
 		
 ;------------------------------------------------------------
 ;
@@ -156,16 +144,12 @@ GameLoop
 		;lda #1
 		;sta VIC_BORDER_COLOR
 
-		
+		jsr runTicker
 
 		;lda #0
 		;sta VIC_BORDER_COLOR
 
 		jmp  GameLoop         
-	
-
-
-
 
 ;---------------------------------------
 ;
@@ -191,6 +175,57 @@ waitFrame
 		  
 		rts
 
+;------------------------------------------------------------
+; runTicker
+;------------------------------------------------------------
+		; loop through the message
+		; copy the shape of the character at the cursor to the input buffer character
+		;  for 8 lines do
+		;   rol line one pixel
+		;  8 pixels scrolled?
+		;  no: keep scrolling
+		;  yes: advance the message pointer
+		;  message pointer at end? yes: set to 0
+		; 
+!zone runTicker
+runTicker	
+		
+;------------------------------------------------------------
+; CalculateCharPos
+; parameters:
+; 	ZEROPAGE_POINTER_2=points to string of characters
+; 	Y=index into ZEROPAGE_POINTER_2
+; returns:
+; 	ZEROPAGE_POINTER_1 address of character shape in memory
+; changes:
+; 	ZEROPAGE_POINTER_3
+;------------------------------------------------------------
+!zone CalculateCharPos
+CalculateCharPos		
+		; calculate memory position of a character
+		; get the character we are targeting
+		lda (ZEROPAGE_POINTER_2),y
+		
+		; multiply its value by 8
+		sta ZEROPAGE_POINTER_3	; store it in result lsb
+		lda #$0				; set result msb to 0
+		sta ZEROPAGE_POINTER_3+1
+		asl ZEROPAGE_POINTER_3	; multiply by 2
+		rol ZEROPAGE_POINTER_3+1	; transfer result to msb
+		asl ZEROPAGE_POINTER_3	; repeat three times
+		rol ZEROPAGE_POINTER_3+1
+		asl ZEROPAGE_POINTER_3
+		rol ZEROPAGE_POINTER_3+1
+		; now add the result to $F000
+		clc					; clear carry
+		lda ZEROPAGE_POINTER_3	; load first number lsb
+		adc #$00				; add to lsb of $f000
+		sta ZEROPAGE_POINTER_1	; store sum of LSBs
+		lda ZEROPAGE_POINTER_3+1	; load first number msb	
+		adc #$F0				; add the MSBs using carry from
+		sta ZEROPAGE_POINTER_1+1	; the previous calculation
+		rts		
+		
 ;------------------------------------------------------------
 ;copies charset from ZEROPAGE_POINTER_1 to ZEROPAGE_POINTER_2
 ;------------------------------------------------------------
@@ -308,8 +343,8 @@ DisplayText
 SCROLL_DELAY	!byte	0
 		 
 MESSAGE	!text "HELLO THIS IS MY MESSAGE*", $00
-;TICKER	!byte 64,65,66,67,68,69,70,71,72,73,74,$2A
-TICKER !byte 0,1,2,3,4,5,6,7,8,9,10,11,$2a
+TICKER	!byte 64,65,66,67,68,69,70,71,72,73,74,$2A
+;TICKER !byte 0,1,2,3,4,5,6,7,8,9,10,11,$2a
 
 ; tables of address of first character on each line of base and backup screens (low and high parts)
 SCREEN_LINE_OFFSET_TABLE_LO
