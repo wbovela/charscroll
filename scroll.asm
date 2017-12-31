@@ -126,8 +126,12 @@ wipeloop	sta (ZEROPAGE_POINTER_1),y
 		cpy #$0b
 		bne nextchar
 		
-hold		nop
-		jmp hold
+		; set PARAM1 to the first character of our message
+		lda #$00
+		sta PARAM1
+		
+;hold		nop
+;		jmp hold
 				
 		
 
@@ -177,18 +181,141 @@ waitFrame
 
 ;------------------------------------------------------------
 ; runTicker
+; parameters:
+;	PARAM1=index into message
+; uses:
+;	
 ;------------------------------------------------------------
-		; loop through the message
-		; copy the shape of the character at the cursor to the input buffer character
-		;  for 8 lines do
-		;   rol line one pixel
-		;  8 pixels scrolled?
-		;  no: keep scrolling
-		;  yes: advance the message pointer
-		;  message pointer at end? yes: set to 0
-		; 
 !zone runTicker
 runTicker	
+		lda SCROLL_DELAY
+		cmp #$08
+		beq dotick
+		inc SCROLL_DELAY
+		jmp done
+		
+dotick	lda #$00
+		sta SCROLL_DELAY
+		
+		lda SCROLL_COUNT
+		bne doscroll
+		
+		; get index into message
+		ldy PARAM1
+		lda #<MESSAGE
+		sta ZEROPAGE_POINTER_2
+		lda #>MESSAGE
+		sta ZEROPAGE_POINTER_2+1
+		jsr CalculateCharPos
+		
+		; copy character shape into input buffer character
+		ldy #$00
+nextbyte	lda (ZEROPAGE_POINTER_1),y
+		sta $F250,y	; 74*8 + $f000 = $f250
+		iny
+		cpy #$08
+		bne nextbyte
+		
+		; next character on next pass
+		inc PARAM1
+doscroll
+		clc
+		rol $f250
+		rol $f250-8
+		rol $f250-16
+		rol $f250-24
+		rol $f250-32
+		rol $f250-40
+		rol $f250-48
+		rol $f250-56
+		rol $f250-64
+		rol $f250-72
+		rol $f250-80
+		rol $f251
+		rol $f251-8
+		rol $f251-16
+		rol $f251-24
+		rol $f251-32
+		rol $f251-40
+		rol $f251-48
+		rol $f251-56
+		rol $f251-64
+		rol $f251-72
+		rol $f251-80
+		rol $f252
+		rol $f252-8
+		rol $f252-16
+		rol $f252-24
+		rol $f252-32
+		rol $f252-40
+		rol $f252-48
+		rol $f252-56
+		rol $f252-64
+		rol $f252-72
+		rol $f252-80
+		rol $f253
+		rol $f253-8
+		rol $f253-16
+		rol $f253-24
+		rol $f253-32
+		rol $f253-40
+		rol $f253-48
+		rol $f253-56
+		rol $f253-64
+		rol $f253-72
+		rol $f253-80
+		rol $f254
+		rol $f254-8
+		rol $f254-16
+		rol $f254-24
+		rol $f254-32
+		rol $f254-40
+		rol $f254-48
+		rol $f254-56
+		rol $f254-64
+		rol $f254-72
+		rol $f254-80
+		rol $f255
+		rol $f255-8
+		rol $f255-16
+		rol $f255-24
+		rol $f255-32
+		rol $f255-40
+		rol $f255-48
+		rol $f255-56
+		rol $f255-64
+		rol $f255-72
+		rol $f255-80
+		rol $f256
+		rol $f256-8
+		rol $f256-16
+		rol $f256-24
+		rol $f256-32
+		rol $f256-40
+		rol $f256-48
+		rol $f256-56
+		rol $f256-64
+		rol $f256-72
+		rol $f256-80
+		rol $f257
+		rol $f257-8
+		rol $f257-16
+		rol $f257-24
+		rol $f257-32
+		rol $f257-40
+		rol $f257-48
+		rol $f257-56
+		rol $f257-64
+		rol $f257-72
+		rol $f257-80
+		
+		inc SCROLL_COUNT
+		lda SCROLL_COUNT
+		cmp #$08
+		bne done
+		lda #$00
+		sta SCROLL_COUNT
+done		rts
 		
 ;------------------------------------------------------------
 ; CalculateCharPos
@@ -341,10 +468,13 @@ DisplayText
 
 ; the delay counter for scrolling
 SCROLL_DELAY	!byte	0
+
+; the scroll counter 
+SCROLL_COUNT	!byte	0
 		 
-MESSAGE	!text "HELLO THIS IS MY MESSAGE*", $00
-TICKER	!byte 64,65,66,67,68,69,70,71,72,73,74,$2A
-;TICKER !byte 0,1,2,3,4,5,6,7,8,9,10,11,$2a
+;MESSAGE	!text "HELLO THIS IS MY MESSAGE*"
+TICKER	!byte 64,65,66,67,68,69,70,71,72,73,74
+MESSAGE	!byte 0,1,2,3,4,5,6,7,8,9,10,11,$2a
 
 ; tables of address of first character on each line of base and backup screens (low and high parts)
 SCREEN_LINE_OFFSET_TABLE_LO
