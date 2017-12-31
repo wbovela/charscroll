@@ -100,11 +100,15 @@ spaceloop
 		lda	#>TICKER
 		sta	ZEROPAGE_POINTER_1 + 1
 		
-		lda #$01
-		sta PARAM1
-		sta PARAM2
+		ldx #$01
+.nextText
+		stx PARAM1
+		stx PARAM2
 		jsr DisplayText
-
+		inx
+		cpx #$0a
+		bne .nextText
+		
 		; empty the character shapes in the ticker
 		ldy #$00
 nextchar	lda #<TICKER
@@ -183,7 +187,7 @@ waitFrame
 !zone runTicker
 runTicker	
 		lda SCROLL_DELAY
-		cmp #$03
+		cmp #$01
 		beq dotick
 		inc SCROLL_DELAY
 		jmp done
@@ -219,10 +223,12 @@ nextbyte	lda (ZEROPAGE_POINTER_1),y
 		lda PARAM2
 		sta $01
 		cli
+		
 		; next character on next pass
 		inc MESSAGE_INDEX
-		lda MESSAGE_INDEX
-		cmp #10
+		ldy MESSAGE_INDEX
+		lda MESSAGE,y
+		cmp #$2a
 		bne doscroll
 		lda #0
 		sta MESSAGE_INDEX
@@ -502,10 +508,16 @@ SCROLL_COUNT	!byte	0
 
 ; current pointer into the message
 MESSAGE_INDEX	!byte	0
-		 
-;MESSAGE	!text "HELLO THIS IS MY MESSAGE*"
+
+!CT 'A',1,'B',2,'C',3,'D',4,'E',5,'F',6,'G',7,'H',8
+!CT 'I',9,'J',10,'K',11,'L',12,'M',13,'N',14,'O',15
+!CT 'P',16,'Q',17,'R',18,'S',19,'T',20,'U',21,'V',22
+!CT 'W',23,'X',24,'Y',25,'Z',26	 
+MESSAGE !text "  HELLO THIS IS MY MESSAGE  *"
+!CONVTAB raw
+
 TICKER	!byte 64,65,66,67,68,69,70,71,72,73,$2a
-MESSAGE	!byte 0,1,2,3,4,5,6,7,8,9,10,11,$2a
+;MESSAGE	!byte 0,1,2,3,4,5,6,7,8,9,10,11,$2a
 
 ; tables of address of first character on each line of base and backup screens (low and high parts)
 SCREEN_LINE_OFFSET_TABLE_LO
