@@ -126,15 +126,9 @@ wipeloop	sta (ZEROPAGE_POINTER_1),y
 		cpy #$0b
 		bne nextchar
 		
-		; set PARAM1 to the first character of our message
+		; set MESSAGE_INDEX to the first character of our message
 		lda #$00
-		sta PARAM1
-		
-;hold		nop
-;		jmp hold
-				
-		
-
+		sta MESSAGE_INDEX
 		
 ;------------------------------------------------------------
 ;
@@ -189,7 +183,7 @@ waitFrame
 !zone runTicker
 runTicker	
 		lda SCROLL_DELAY
-		cmp #$08
+		cmp #$03
 		beq dotick
 		inc SCROLL_DELAY
 		jmp done
@@ -201,24 +195,47 @@ dotick	lda #$00
 		bne doscroll
 		
 		; get index into message
-		ldy PARAM1
+		ldy MESSAGE_INDEX
 		lda #<MESSAGE
 		sta ZEROPAGE_POINTER_2
 		lda #>MESSAGE
 		sta ZEROPAGE_POINTER_2+1
 		jsr CalculateCharPos
 		
+		sei
+		lda $01
+		sta PARAM2
+		lda #%00110101
+		sta $01
+		
 		; copy character shape into input buffer character
-		ldy #$00
+		ldy #$00		
 nextbyte	lda (ZEROPAGE_POINTER_1),y
 		sta $F250,y	; 74*8 + $f000 = $f250
 		iny
 		cpy #$08
 		bne nextbyte
 		
+		lda PARAM2
+		sta $01
+		cli
 		; next character on next pass
-		inc PARAM1
+		inc MESSAGE_INDEX
+		lda MESSAGE_INDEX
+		cmp #10
+		bne doscroll
+		lda #0
+		sta MESSAGE_INDEX
 doscroll
+		;save old configuration
+		sei
+		lda $01
+		sta PARAM1
+          
+		; open RAM at $A000-$BFFF and $E000-$FFFF
+		lda #%00110101
+		sta $01
+		
 		clc
 		rol $f250
 		rol $f250-8
@@ -231,6 +248,7 @@ doscroll
 		rol $f250-64
 		rol $f250-72
 		rol $f250-80
+		clc
 		rol $f251
 		rol $f251-8
 		rol $f251-16
@@ -242,6 +260,7 @@ doscroll
 		rol $f251-64
 		rol $f251-72
 		rol $f251-80
+		clc
 		rol $f252
 		rol $f252-8
 		rol $f252-16
@@ -253,6 +272,7 @@ doscroll
 		rol $f252-64
 		rol $f252-72
 		rol $f252-80
+		clc
 		rol $f253
 		rol $f253-8
 		rol $f253-16
@@ -264,6 +284,7 @@ doscroll
 		rol $f253-64
 		rol $f253-72
 		rol $f253-80
+		clc
 		rol $f254
 		rol $f254-8
 		rol $f254-16
@@ -275,6 +296,7 @@ doscroll
 		rol $f254-64
 		rol $f254-72
 		rol $f254-80
+		clc
 		rol $f255
 		rol $f255-8
 		rol $f255-16
@@ -286,6 +308,7 @@ doscroll
 		rol $f255-64
 		rol $f255-72
 		rol $f255-80
+		clc
 		rol $f256
 		rol $f256-8
 		rol $f256-16
@@ -297,6 +320,7 @@ doscroll
 		rol $f256-64
 		rol $f256-72
 		rol $f256-80
+		clc
 		rol $f257
 		rol $f257-8
 		rol $f257-16
@@ -308,6 +332,10 @@ doscroll
 		rol $f257-64
 		rol $f257-72
 		rol $f257-80
+		
+		lda PARAM1
+		sta $01
+		cli
 		
 		inc SCROLL_COUNT
 		lda SCROLL_COUNT
@@ -471,9 +499,12 @@ SCROLL_DELAY	!byte	0
 
 ; the scroll counter 
 SCROLL_COUNT	!byte	0
+
+; current pointer into the message
+MESSAGE_INDEX	!byte	0
 		 
 ;MESSAGE	!text "HELLO THIS IS MY MESSAGE*"
-TICKER	!byte 64,65,66,67,68,69,70,71,72,73,74
+TICKER	!byte 64,65,66,67,68,69,70,71,72,73,$2a
 MESSAGE	!byte 0,1,2,3,4,5,6,7,8,9,10,11,$2a
 
 ; tables of address of first character on each line of base and backup screens (low and high parts)
