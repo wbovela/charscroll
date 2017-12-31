@@ -509,11 +509,8 @@ SCROLL_COUNT	!byte	0
 ; current pointer into the message
 MESSAGE_INDEX	!byte	0
 
-!CT 'A',1,'B',2,'C',3,'D',4,'E',5,'F',6,'G',7,'H',8
-!CT 'I',9,'J',10,'K',11,'L',12,'M',13,'N',14,'O',15
-!CT 'P',16,'Q',17,'R',18,'S',19,'T',20,'U',21,'V',22
-!CT 'W',23,'X',24,'Y',25,'Z',26	 
-MESSAGE !text "  HELLO THIS IS MY MESSAGE  *"
+!CT scr
+MESSAGE !text "  hello this is my message  *"
 !CONVTAB raw
 
 TICKER	!byte 64,65,66,67,68,69,70,71,72,73,$2a
