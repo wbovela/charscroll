@@ -106,7 +106,7 @@ spaceloop
 		stx PARAM2
 		jsr DisplayText
 		inx
-		cpx #$0a
+		cpx #$0c
 		bne .nextText
 		
 		; empty the character shapes in the ticker
