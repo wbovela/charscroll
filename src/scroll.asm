@@ -1,5 +1,5 @@
 ;compile to this filename
-!to "jmain.prg",cbm
+!to "..\bin\jmain.prg",cbm
 
 ;define constants here
 
@@ -100,11 +100,13 @@ spaceloop
 		lda	#>TICKER
 		sta	ZEROPAGE_POINTER_1 + 1
 		
-		ldx #$01
+		ldx #$00
+		ldy #$0a
 .nextText
 		stx PARAM1
 		stx PARAM2
 		jsr DisplayText
+		
 		inx
 		cpx #$0c
 		bne .nextText
@@ -213,6 +215,7 @@ dotick	lda #$00
 		sta $01
 		
 		; copy character shape into input buffer character
+		; note that the input buffer character is the LAST one (so 64 + 10 = 74)
 		ldy #$00		
 nextbyte	lda (ZEROPAGE_POINTER_1),y
 		sta $F250,y	; 74*8 + $f000 = $f250
@@ -514,7 +517,6 @@ MESSAGE !text "  hello this is my message  *"
 !CONVTAB raw
 
 TICKER	!byte 64,65,66,67,68,69,70,71,72,73,$2a
-;MESSAGE	!byte 0,1,2,3,4,5,6,7,8,9,10,11,$2a
 
 ; tables of address of first character on each line of base and backup screens (low and high parts)
 SCREEN_LINE_OFFSET_TABLE_LO
